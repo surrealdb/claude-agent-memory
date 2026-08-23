@@ -1,0 +1,52 @@
+{
+	"name": "@surrealdb/claude-agent-memory",
+	"version": "0.1.0",
+	"description": "Persistent memory for Claude Agent SDK agents, backed by SurrealDB Agent Memory.",
+	"license": "Apache-2.0",
+	"type": "module",
+	"keywords": [
+		"surrealdb",
+		"agent-memory",
+		"spectron",
+		"claude",
+		"claude-agent-sdk",
+		"anthropic",
+		"memory",
+		"ai-agents"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/surrealdb/claude-agent-memory.git"
+	},
+	"homepage": "https://surrealdb.com/docs/agent-memory",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": ["dist", "README.md", "LICENSE"],
+	"scripts": {
+		"build": "bun run build.ts && tsc -p tsconfig.build.json",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "bun run typecheck && bun test && bun run build"
+	},
+	"dependencies": {
+		"@surrealdb/spectron": "^1.0.0-alpha.7",
+		"zod": "^3.25.0 || ^4.0.0"
+	},
+	"peerDependencies": {
+		"@anthropic-ai/claude-agent-sdk": ">=0.3.0"
+	},
+	"devDependencies": {
+		"@anthropic-ai/claude-agent-sdk": "latest",
+		"@types/bun": "latest",
+		"typescript": "^5.6.0"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}
