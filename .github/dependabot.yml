@@ -1,0 +1,32 @@
+# Dependabot configuration for @surrealdb/claude-agent-memory.
+#
+# Follows the house pattern from surrealdb/surrealdb: `open-pull-requests-limit: 0`
+# plus an `applies-to: security-updates` group means Dependabot raises PRs only
+# for security-relevant (CVE-driven) updates, not for every minor version bump.
+#
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # GitHub Actions — mandatory for every SurrealDB repo.
+  # Keeps the SHA-pinned `uses:` lines in .github/workflows/ fresh.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0   # security updates only
+    groups:
+      actions:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # npm — covers package.json and bun.lock at the repo root.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0   # security updates only
+    groups:
+      node:
+        applies-to: security-updates
+        patterns: ["*"]
