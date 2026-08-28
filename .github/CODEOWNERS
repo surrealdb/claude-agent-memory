@@ -1,0 +1,13 @@
+# Owners are individuals while this repo lives in the `surrealdb-dev` org,
+# which exposes no teams — `@surrealdb/*` handles do not resolve here.
+#
+# On promotion to the `surrealdb` org, replace the rule below with:
+#
+#   *                     @surrealdb/spectron
+#   /.github/             @surrealdb/ci
+#   SECURITY.md           @surrealdb/security
+#   .github/CODEOWNERS    @surrealdb/security
+#   package.json          @surrealdb/security
+#   bun.lock              @surrealdb/security
+
+* @itsezc

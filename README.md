@@ -211,6 +211,11 @@ bun run build
 
 The test suite needs no credentials. Most of it runs against a recording client double and a scripted message stream; `tests/integration.test.ts` additionally drives the real HTTP client against a local stub of the Agent Memory API, so the requests this package puts on the wire — paths, auth, scope normalisation, batch bodies — are covered too.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues go to security@surrealdb.com
+rather than a public issue — see [SECURITY.md](SECURITY.md).
+
 ## License
 
 Apache-2.0

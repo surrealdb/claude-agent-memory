@@ -18,7 +18,13 @@
 		"type": "git",
 		"url": "git+https://github.com/surrealdb/claude-agent-memory.git"
 	},
+	"bugs": {
+		"url": "https://github.com/surrealdb/claude-agent-memory/issues"
+	},
 	"homepage": "https://surrealdb.com/docs/agent-memory",
+	"publishConfig": {
+		"access": "public"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
