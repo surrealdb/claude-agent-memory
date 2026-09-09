@@ -102,7 +102,7 @@ You can also pass an exact list (`tools: ["recall", "remember"]`), an exclusion 
 const memory = createAgentMemory({
   // Connection — each falls back to its AGENT_MEMORY_* variable.
   endpoint, apiKey, context,
-  client,              // bring your own AgentMemory client instead
+  client,              // bring your own Agent Memory client instead
   timeout, maxRetries, fetchImpl,
 
   // Scoping

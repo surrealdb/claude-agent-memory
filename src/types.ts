@@ -176,7 +176,7 @@ export interface AgentMemoryConfig {
 }
 
 /**
- * Per-call overrides for {@link AgentMemory.query}.
+ * Per-call overrides for {@link Agent Memory.query}.
  *
  * There is deliberately no `lens` here. A read lens should also narrow what the
  * memory tools can see, and those live on the MCP server built once per
