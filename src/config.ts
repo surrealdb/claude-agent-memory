@@ -1,4 +1,4 @@
-import { Spectron } from "@surrealdb/spectron";
+import { AgentMemory as AgentMemoryClient } from "@surrealdb/memory";
 import type { AgentMemoryConfig, MemoryToolName, ToolSelection } from "./types";
 
 /** Every tool the server can expose, in the order they are registered. */
@@ -34,17 +34,17 @@ function selectTools(selection: ToolSelection | undefined): MemoryToolName[] {
 	return ALL_TOOLS.filter((name) => chosen.has(name));
 }
 
-function resolveClient(config: AgentMemoryConfig): Spectron {
+function resolveClient(config: AgentMemoryConfig): AgentMemoryClient {
 	if (config.client) return config.client;
 
-	const endpoint = config.endpoint ?? process.env.SPECTRON_ENDPOINT;
-	const apiKey = config.apiKey ?? process.env.SPECTRON_API_KEY;
-	const context = config.context ?? process.env.SPECTRON_CONTEXT;
+	const endpoint = config.endpoint ?? process.env.AGENT_MEMORY_ENDPOINT;
+	const apiKey = config.apiKey ?? process.env.AGENT_MEMORY_API_KEY;
+	const context = config.context ?? process.env.AGENT_MEMORY_CONTEXT;
 
 	const missing = [
-		endpoint ? undefined : "endpoint (SPECTRON_ENDPOINT)",
-		apiKey ? undefined : "apiKey (SPECTRON_API_KEY)",
-		context ? undefined : "context (SPECTRON_CONTEXT)",
+		endpoint ? undefined : "endpoint (AGENT_MEMORY_ENDPOINT)",
+		apiKey ? undefined : "apiKey (AGENT_MEMORY_API_KEY)",
+		context ? undefined : "context (AGENT_MEMORY_CONTEXT)",
 	].filter((entry): entry is string => entry !== undefined);
 
 	if (missing.length > 0) {
@@ -55,7 +55,7 @@ function resolveClient(config: AgentMemoryConfig): Spectron {
 		);
 	}
 
-	return new Spectron({
+	return new AgentMemoryClient({
 		// biome-ignore lint/style/noNonNullAssertion: checked above
 		endpoint: endpoint!,
 		// biome-ignore lint/style/noNonNullAssertion: checked above

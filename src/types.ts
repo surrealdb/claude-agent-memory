@@ -1,4 +1,8 @@
-import type { BatchMessage, Scope, Spectron } from "@surrealdb/spectron";
+import type {
+	AgentMemory as AgentMemoryClient,
+	BatchMessage,
+	Scope,
+} from "@surrealdb/memory";
 import type {
 	HookCallbackMatcher,
 	HookEvent,
@@ -58,18 +62,18 @@ export interface TurnRecord {
 export interface AgentMemoryConfig {
 	// ---- connection ----------------------------------------------------------
 
-	/** API endpoint origin. Defaults to `process.env.SPECTRON_ENDPOINT`. */
+	/** API endpoint origin. Defaults to `process.env.AGENT_MEMORY_ENDPOINT`. */
 	endpoint?: string;
-	/** Bearer API key. Defaults to `process.env.SPECTRON_API_KEY`. */
+	/** Bearer API key. Defaults to `process.env.AGENT_MEMORY_API_KEY`. */
 	apiKey?: string;
-	/** Agent Memory context id. Defaults to `process.env.SPECTRON_CONTEXT`. */
+	/** Agent Memory context id. Defaults to `process.env.AGENT_MEMORY_CONTEXT`. */
 	context?: string;
 	/**
 	 * A pre-built client to use instead of constructing one — e.g.
 	 * `base.onBehalfOf(userId)` for per-request delegation. Takes precedence
 	 * over `endpoint` / `apiKey` / `context`.
 	 */
-	client?: Spectron;
+	client?: AgentMemoryClient;
 	/** Request timeout in ms, forwarded to the client. Defaults to `30_000`. */
 	timeout?: number;
 	/** Max retries for idempotent requests, forwarded to the client. */
@@ -236,5 +240,5 @@ export interface AgentMemory {
 	flush(): Promise<void>;
 
 	/** The underlying Agent Memory client. */
-	readonly client: Spectron;
+	readonly client: AgentMemoryClient;
 }

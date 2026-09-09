@@ -5,16 +5,16 @@ import type {
 	HookInput,
 	SessionStartHookInput,
 } from "@anthropic-ai/claude-agent-sdk";
-import { ConnectionError } from "@surrealdb/spectron";
+import { ConnectionError } from "@surrealdb/memory";
 import { createAgentMemory } from "../src/memory";
 import { MEMORY_TAG } from "../src/format";
 import type { AgentMemoryConfig, MemoryOp } from "../src/types";
-import { MockSpectron } from "./mocks/spectron";
+import { MockAgentMemory } from "./mocks/agent-memory";
 
 function setup(config: Partial<AgentMemoryConfig> = {}) {
-	const spectron = new MockSpectron();
-	const memory = createAgentMemory({ client: spectron.asClient(), ...config });
-	return { spectron, memory, hooks: memory.hooks() };
+	const agentMemory = new MockAgentMemory();
+	const memory = createAgentMemory({ client: agentMemory.asClient(), ...config });
+	return { agentMemory, memory, hooks: memory.hooks() };
 }
 
 function callback(
@@ -46,7 +46,7 @@ const contextOf = (output: unknown) =>
 
 describe("UserPromptSubmit", () => {
 	test("injects a labelled memory block built from context", async () => {
-		const { spectron, hooks } = setup();
+		const { agentMemory, hooks } = setup();
 
 		const output = await callback(hooks, "UserPromptSubmit")(
 			promptInput("Where do I live?"),
@@ -54,13 +54,13 @@ describe("UserPromptSubmit", () => {
 			signal,
 		);
 
-		expect(spectron.callsFor("context")).toHaveLength(1);
+		expect(agentMemory.callsFor("context")).toHaveLength(1);
 		expect(contextOf(output)).toContain(`<${MEMORY_TAG}>`);
 		expect(contextOf(output)).toContain("prefers dark mode");
 	});
 
 	test("uses recall when asked to, passing k and the lens", async () => {
-		const { spectron, hooks } = setup({
+		const { agentMemory, hooks } = setup({
 			retrieval: "recall",
 			k: 3,
 			lens: "user/tobie",
@@ -72,7 +72,7 @@ describe("UserPromptSubmit", () => {
 			signal,
 		);
 
-		expect(spectron.callsFor("recall")[0]?.args[1]).toMatchObject({
+		expect(agentMemory.callsFor("recall")[0]?.args[1]).toMatchObject({
 			k: 3,
 			lens: "user/tobie",
 		});
@@ -80,8 +80,8 @@ describe("UserPromptSubmit", () => {
 	});
 
 	test("injects nothing when memory comes back empty", async () => {
-		const { spectron, hooks } = setup();
-		spectron.contextText = "   ";
+		const { agentMemory, hooks } = setup();
+		agentMemory.contextText = "   ";
 
 		const output = await callback(hooks, "UserPromptSubmit")(
 			promptInput("anything"),
@@ -94,16 +94,16 @@ describe("UserPromptSubmit", () => {
 	});
 
 	test("skips the round trip for a blank prompt", async () => {
-		const { spectron, hooks } = setup();
+		const { agentMemory, hooks } = setup();
 
 		await callback(hooks, "UserPromptSubmit")(promptInput("   "), undefined, signal);
 
-		expect(spectron.calls).toHaveLength(0);
+		expect(agentMemory.calls).toHaveLength(0);
 	});
 
 	test("continues the turn when memory is down", async () => {
-		const { spectron, hooks } = setup();
-		spectron.failWith("context", new ConnectionError({ status: 0, title: "down" }));
+		const { agentMemory, hooks } = setup();
+		agentMemory.failWith("context", new ConnectionError({ status: 0, title: "down" }));
 
 		const output = await callback(hooks, "UserPromptSubmit")(
 			promptInput("hello"),
@@ -116,8 +116,8 @@ describe("UserPromptSubmit", () => {
 	});
 
 	test("gives up on a slow memory service rather than stalling the turn", async () => {
-		const { spectron, hooks } = setup({ injectTimeoutMs: 20 });
-		spectron.delay("context", 500);
+		const { agentMemory, hooks } = setup({ injectTimeoutMs: 20 });
+		agentMemory.delay("context", 500);
 
 		const started = Date.now();
 		const output = await callback(hooks, "UserPromptSubmit")(
@@ -132,8 +132,8 @@ describe("UserPromptSubmit", () => {
 
 	test("reports what it swallowed", async () => {
 		const seen: MemoryOp[] = [];
-		const { spectron, hooks } = setup({ onError: (_, op) => seen.push(op) });
-		spectron.failWith("context", new Error("nope"));
+		const { agentMemory, hooks } = setup({ onError: (_, op) => seen.push(op) });
+		agentMemory.failWith("context", new Error("nope"));
 
 		await callback(hooks, "UserPromptSubmit")(promptInput("hi"), undefined, signal);
 
@@ -141,8 +141,8 @@ describe("UserPromptSubmit", () => {
 	});
 
 	test("propagates the failure when failing closed", async () => {
-		const { spectron, hooks } = setup({ failOpen: false });
-		spectron.failWith("context", new Error("nope"));
+		const { agentMemory, hooks } = setup({ failOpen: false });
+		agentMemory.failWith("context", new Error("nope"));
 
 		const attempt = callback(hooks, "UserPromptSubmit")(
 			promptInput("hi"),
@@ -160,7 +160,7 @@ describe("UserPromptSubmit", () => {
 
 describe("SessionStart", () => {
 	test("injects the profile on a fresh session", async () => {
-		const { spectron, hooks } = setup();
+		const { agentMemory, hooks } = setup();
 
 		const output = await callback(hooks, "SessionStart")(
 			startInput("startup"),
@@ -168,7 +168,7 @@ describe("SessionStart", () => {
 			signal,
 		);
 
-		expect(spectron.callsFor("profile")).toHaveLength(1);
+		expect(agentMemory.callsFor("profile")).toHaveLength(1);
 		expect(contextOf(output)).toContain("name: Tobie");
 		expect(contextOf(output)).toContain("Be brief");
 	});
@@ -189,7 +189,7 @@ describe("SessionStart", () => {
 	test.each(["resume", "fork"] as const)(
 		"stays quiet on %s, where the transcript already has it",
 		async (source) => {
-			const { spectron, hooks } = setup();
+			const { agentMemory, hooks } = setup();
 
 			const output = await callback(hooks, "SessionStart")(
 				startInput(source),
@@ -197,14 +197,14 @@ describe("SessionStart", () => {
 				signal,
 			);
 
-			expect(spectron.calls).toHaveLength(0);
+			expect(agentMemory.calls).toHaveLength(0);
 			expect(contextOf(output)).toBeUndefined();
 		},
 	);
 
 	test("injects nothing when there is no profile yet", async () => {
-		const { spectron, hooks } = setup();
-		spectron.profilePayload = {
+		const { agentMemory, hooks } = setup();
+		agentMemory.profilePayload = {
 			static: [],
 			dynamic: [],
 			preferences: [],

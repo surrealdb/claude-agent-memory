@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { HookCallback, Options } from "@anthropic-ai/claude-agent-sdk";
 import { createAgentMemory } from "../src/memory";
-import { MockSpectron } from "./mocks/spectron";
+import { MockAgentMemory } from "./mocks/agent-memory";
 
 const memory = (overrides = {}) =>
-	createAgentMemory({ client: new MockSpectron().asClient(), ...overrides });
+	createAgentMemory({ client: new MockAgentMemory().asClient(), ...overrides });
 
 const noop: HookCallback = async () => ({ continue: true });
 

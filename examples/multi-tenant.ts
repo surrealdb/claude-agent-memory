@@ -7,12 +7,12 @@
  * principal, so the service enforces the boundary rather than trusting us; the
  * scope and lens then narrow reads and writes to that user's region.
  */
-import { Spectron, createAgentMemory } from "../src/index";
+import { AgentMemoryClient, createAgentMemory } from "../src/index";
 
-const base = new Spectron({
-	endpoint: process.env.SPECTRON_ENDPOINT!,
-	apiKey: process.env.SPECTRON_API_KEY!,
-	context: process.env.SPECTRON_CONTEXT!,
+const base = new AgentMemoryClient({
+	endpoint: process.env.AGENT_MEMORY_ENDPOINT!,
+	apiKey: process.env.AGENT_MEMORY_API_KEY!,
+	context: process.env.AGENT_MEMORY_CONTEXT!,
 });
 
 /** Per-request memory for one user. Cheap to build; build it per request. */

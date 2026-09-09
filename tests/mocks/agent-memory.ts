@@ -1,4 +1,4 @@
-import type { Spectron } from "@surrealdb/spectron";
+import type { AgentMemory } from "@surrealdb/memory";
 import type { MemoryOp } from "../../src/types";
 
 export interface RecordedCall {
@@ -11,7 +11,7 @@ export interface RecordedCall {
  * touches. Injected through the public `client` option, so no module mocking is
  * involved.
  */
-export class MockSpectron {
+export class MockAgentMemory {
 	readonly calls: RecordedCall[] = [];
 
 	private readonly failures = new Map<MemoryOp, unknown>();
@@ -55,8 +55,8 @@ export class MockSpectron {
 	}
 
 	/** Type-erased view for passing into `createAgentMemory({ client })`. */
-	asClient(): Spectron {
-		return this as unknown as Spectron;
+	asClient(): AgentMemory {
+		return this as unknown as AgentMemory;
 	}
 
 	private async record<T>(op: MemoryOp, args: unknown[], value: T): Promise<T> {

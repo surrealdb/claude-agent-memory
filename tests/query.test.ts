@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { Query, SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import { ConnectionError, RateLimitError } from "@surrealdb/spectron";
+import { ConnectionError, RateLimitError } from "@surrealdb/memory";
 import { resolveConfig } from "../src/config";
 import { createAgentMemory } from "../src/memory";
 import { wrapQuery } from "../src/query";
 import { SESSION_LABEL_KEY, SessionBinder } from "../src/sessions";
 import type { AgentMemoryConfig, QueryOverrides, TurnRecord } from "../src/types";
-import { MockSpectron } from "./mocks/spectron";
+import { MockAgentMemory } from "./mocks/agent-memory";
 import {
 	assistantText,
 	drain,
@@ -36,12 +36,12 @@ function setup(
 	messages: SDKMessage[] = ONE_TURN,
 	config: Partial<AgentMemoryConfig> = {},
 ) {
-	const spectron = new MockSpectron();
+	const agentMemory = new MockAgentMemory();
 	const turns: TurnRecord[] = [];
 	let scripted: ScriptedQuery | undefined;
 
 	const memory = createAgentMemory({
-		client: spectron.asClient(),
+		client: agentMemory.asClient(),
 		onTurn: (turn) => turns.push(turn),
 		_queryFn: () => {
 			scripted = scriptedQuery(messages);
@@ -53,12 +53,12 @@ function setup(
 	const run = (overrides?: QueryOverrides) =>
 		memory.query({ prompt: "hello" }, overrides);
 
-	return { spectron, memory, turns, run, scripted: () => scripted };
+	return { agentMemory, memory, turns, run, scripted: () => scripted };
 }
 
-const writes = (spectron: MockSpectron) => spectron.callsFor("rememberMany");
-const optionsOf = (spectron: MockSpectron, index = 0) =>
-	writes(spectron)[index]?.args[1] as Record<string, unknown>;
+const writes = (agentMemory: MockAgentMemory) => agentMemory.callsFor("rememberMany");
+const optionsOf = (agentMemory: MockAgentMemory, index = 0) =>
+	writes(agentMemory)[index]?.args[1] as Record<string, unknown>;
 
 describe("pass-through", () => {
 	test("yields every message, unchanged and in order", async () => {
@@ -95,50 +95,50 @@ describe("pass-through", () => {
 
 describe("persistence", () => {
 	test("writes one batch per completed turn", async () => {
-		const { spectron, run } = setup();
+		const { agentMemory, run } = setup();
 
 		await drain(run());
 
-		expect(writes(spectron)).toHaveLength(1);
-		expect(writes(spectron)[0]?.args[0]).toEqual([
+		expect(writes(agentMemory)).toHaveLength(1);
+		expect(writes(agentMemory)[0]?.args[0]).toEqual([
 			{ role: "user", content: "I moved to Lisbon" },
 			{ role: "assistant", content: "Noted." },
 		]);
 	});
 
 	test("labels every row with the Claude session", async () => {
-		const { spectron, run } = setup();
+		const { agentMemory, run } = setup();
 
 		await drain(run());
 
-		expect(optionsOf(spectron).labels).toContain(
+		expect(optionsOf(agentMemory).labels).toContain(
 			`${SESSION_LABEL_KEY}=claude-session-1`,
 		);
 	});
 
 	test("carries configured scopes and labels", async () => {
-		const { spectron, run } = setup(ONE_TURN, {
+		const { agentMemory, run } = setup(ONE_TURN, {
 			scopes: "user/tobie",
 			labels: ["app=demo"],
 		});
 
 		await drain(run());
 
-		expect(optionsOf(spectron)).toMatchObject({ scopes: "user/tobie" });
-		expect(optionsOf(spectron).labels).toContain("app=demo");
+		expect(optionsOf(agentMemory)).toMatchObject({ scopes: "user/tobie" });
+		expect(optionsOf(agentMemory).labels).toContain("app=demo");
 	});
 
 	test("per-call overrides beat the configured defaults", async () => {
-		const { spectron, run } = setup(ONE_TURN, { scopes: "user/default" });
+		const { agentMemory, run } = setup(ONE_TURN, { scopes: "user/default" });
 
 		await drain(run({ scopes: "team/eng", labels: ["run=1"] }));
 
-		expect(optionsOf(spectron)).toMatchObject({ scopes: "team/eng" });
-		expect(optionsOf(spectron).labels).toContain("run=1");
+		expect(optionsOf(agentMemory)).toMatchObject({ scopes: "team/eng" });
+		expect(optionsOf(agentMemory).labels).toContain("run=1");
 	});
 
 	test("has written everything by the time the stream ends", async () => {
-		const { spectron, run } = setup();
+		const { agentMemory, run } = setup();
 
 		for await (const message of run()) {
 			if (message.type === "result") {
@@ -147,25 +147,25 @@ describe("persistence", () => {
 			}
 		}
 
-		expect(writes(spectron)).toHaveLength(1);
+		expect(writes(agentMemory)).toHaveLength(1);
 	});
 
 	test("writes nothing when storing is off, but still reports the turn", async () => {
-		const { spectron, turns, run } = setup(ONE_TURN, { store: false });
+		const { agentMemory, turns, run } = setup(ONE_TURN, { store: false });
 
 		await drain(run());
 
-		expect(writes(spectron)).toHaveLength(0);
+		expect(writes(agentMemory)).toHaveLength(0);
 		expect(turns).toHaveLength(1);
 		expect(turns[0]?.persisted).toBe(false);
 	});
 
 	test("an override can disable storing for one call", async () => {
-		const { spectron, run } = setup();
+		const { agentMemory, run } = setup();
 
 		await drain(run({ store: false }));
 
-		expect(writes(spectron)).toHaveLength(0);
+		expect(writes(agentMemory)).toHaveLength(0);
 	});
 });
 
@@ -181,40 +181,40 @@ describe("sessions", () => {
 	];
 
 	test("creates a session on the first write and reuses it after", async () => {
-		const { spectron, memory, run } = setup(TWO_TURNS);
+		const { agentMemory, memory, run } = setup(TWO_TURNS);
 
 		await drain(run());
 
-		expect(writes(spectron)).toHaveLength(2);
-		expect(optionsOf(spectron, 0).sessionId).toBeUndefined();
-		expect(optionsOf(spectron, 1).sessionId).toBe("session:1");
+		expect(writes(agentMemory)).toHaveLength(2);
+		expect(optionsOf(agentMemory, 0).sessionId).toBeUndefined();
+		expect(optionsOf(agentMemory, 1).sessionId).toBe("session:1");
 		expect(memory.memorySessionFor("claude-session-1")).toBe("session:1");
 	});
 
 	test("creates only one session when turns outrun the first write", async () => {
-		const { spectron, memory, run } = setup(TWO_TURNS);
+		const { agentMemory, memory, run } = setup(TWO_TURNS);
 
 		// The first write is what creates the session. If a second turn's write
 		// could start before it returns, the service would create a second session
 		// for the same conversation and orphan those rows.
-		spectron.delay("rememberMany", 120);
+		agentMemory.delay("rememberMany", 120);
 
 		await drain(run());
 
-		expect(writes(spectron)).toHaveLength(2);
-		expect(optionsOf(spectron, 0).sessionId).toBeUndefined();
-		expect(optionsOf(spectron, 1).sessionId).toBe("session:1");
+		expect(writes(agentMemory)).toHaveLength(2);
+		expect(optionsOf(agentMemory, 0).sessionId).toBeUndefined();
+		expect(optionsOf(agentMemory, 1).sessionId).toBe("session:1");
 		expect(memory.memorySessionFor("claude-session-1")).toBe("session:1");
 	});
 
 	test("stores a conversation's turns in order", async () => {
-		const { spectron, run } = setup(TWO_TURNS);
-		spectron.delay("rememberMany", 60);
+		const { agentMemory, run } = setup(TWO_TURNS);
+		agentMemory.delay("rememberMany", 60);
 
 		await drain(run());
 
-		const first = writes(spectron)[0]?.args[0] as { content: string }[];
-		const second = writes(spectron)[1]?.args[0] as { content: string }[];
+		const first = writes(agentMemory)[0]?.args[0] as { content: string }[];
+		const second = writes(agentMemory)[1]?.args[0] as { content: string }[];
 
 		expect(first[0]?.content).toBe("first");
 		expect(second[0]?.content).toBe("second");
@@ -234,29 +234,29 @@ describe("sessions", () => {
 	});
 
 	test("a pinned session is used from the very first write", async () => {
-		const { spectron, run } = setup(TWO_TURNS, { sessionId: "session:pinned" });
+		const { agentMemory, run } = setup(TWO_TURNS, { sessionId: "session:pinned" });
 
 		await drain(run());
 
-		expect(optionsOf(spectron, 0).sessionId).toBe("session:pinned");
-		expect(optionsOf(spectron, 1).sessionId).toBe("session:pinned");
+		expect(optionsOf(agentMemory, 0).sessionId).toBe("session:pinned");
+		expect(optionsOf(agentMemory, 1).sessionId).toBe("session:pinned");
 	});
 
 	test("sessionId false keeps turns unattached", async () => {
-		const { spectron, memory, run } = setup(TWO_TURNS, { sessionId: false });
+		const { agentMemory, memory, run } = setup(TWO_TURNS, { sessionId: false });
 
 		await drain(run());
 
-		expect(optionsOf(spectron, 0).sessionId).toBeUndefined();
-		expect(optionsOf(spectron, 1).sessionId).toBeUndefined();
+		expect(optionsOf(agentMemory, 0).sessionId).toBeUndefined();
+		expect(optionsOf(agentMemory, 1).sessionId).toBeUndefined();
 		expect(memory.memorySessionFor("claude-session-1")).toBeUndefined();
 	});
 });
 
 describe("resilience", () => {
 	test("a failed write leaves the stream intact and is reported", async () => {
-		const { spectron, turns, run } = setup();
-		spectron.failWith(
+		const { agentMemory, turns, run } = setup();
+		agentMemory.failWith(
 			"rememberMany",
 			new ConnectionError({ status: 0, title: "down" }),
 		);
@@ -268,16 +268,16 @@ describe("resilience", () => {
 	});
 
 	test("retries a write once when told to wait briefly", async () => {
-		const { spectron, turns, run } = setup();
+		const { agentMemory, turns, run } = setup();
 		let attempts = 0;
-		const original = spectron.rememberMany.bind(spectron);
-		spectron.rememberMany = ((messages: unknown[], options?: unknown) => {
+		const original = agentMemory.rememberMany.bind(agentMemory);
+		agentMemory.rememberMany = ((messages: unknown[], options?: unknown) => {
 			attempts += 1;
 			if (attempts === 1) {
 				throw new RateLimitError({ status: 429, title: "slow", retryAfter: 0.01 });
 			}
 			return original(messages as never, options as never);
-		}) as typeof spectron.rememberMany;
+		}) as typeof agentMemory.rememberMany;
 
 		await drain(run());
 
@@ -296,14 +296,14 @@ describe("resilience", () => {
 	});
 
 	test("stopping early still persists the turns that completed", async () => {
-		const { spectron, run } = setup();
+		const { agentMemory, run } = setup();
 		const query = run();
 
 		for await (const message of query) {
 			if (message.type === "result") break;
 		}
 
-		expect(writes(spectron)).toHaveLength(1);
+		expect(writes(agentMemory)).toHaveLength(1);
 	});
 
 	test("flush() is safe when nothing is pending", async () => {
@@ -313,9 +313,9 @@ describe("resilience", () => {
 	});
 
 	test("reports the failure itself, not just that one happened", async () => {
-		const { spectron, turns, run } = setup();
+		const { agentMemory, turns, run } = setup();
 		const boom = new ConnectionError({ status: 0, title: "down" });
-		spectron.failWith("rememberMany", boom);
+		agentMemory.failWith("rememberMany", boom);
 
 		await drain(run());
 
@@ -324,8 +324,8 @@ describe("resilience", () => {
 	});
 
 	test("a failing write does not raise an unhandled rejection", async () => {
-		const spectron = new MockSpectron();
-		spectron.failWith("rememberMany", new Error("write failed"));
+		const agentMemory = new MockAgentMemory();
+		agentMemory.failWith("rememberMany", new Error("write failed"));
 
 		const unhandled: unknown[] = [];
 		const onUnhandled = (error: unknown) => unhandled.push(error);
@@ -335,7 +335,7 @@ describe("resilience", () => {
 			// Failing closed is the case that rethrows out of the write, which is
 			// what used to escape as an unhandled rejection and kill the process.
 			const memory = createAgentMemory({
-				client: spectron.asClient(),
+				client: agentMemory.asClient(),
 				failOpen: false,
 				_queryFn: () => scriptedQuery(ONE_TURN),
 			});
@@ -352,11 +352,11 @@ describe("resilience", () => {
 	});
 
 	test("failing closed surfaces a write failure to the caller", async () => {
-		const spectron = new MockSpectron();
-		spectron.failWith("rememberMany", new Error("write failed"));
+		const agentMemory = new MockAgentMemory();
+		agentMemory.failWith("rememberMany", new Error("write failed"));
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			failOpen: false,
 			_queryFn: () => scriptedQuery(ONE_TURN),
 		});
@@ -369,11 +369,11 @@ describe("resilience", () => {
 	});
 
 	test("persists captured turns when the stream itself fails", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		const failing = [...ONE_TURN];
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			_queryFn: () => {
 				const inner = scriptedQuery(failing);
 				let index = 0;
@@ -396,29 +396,29 @@ describe("resilience", () => {
 		);
 
 		// The turn completed before the stream broke, so it must have landed.
-		expect(writes(spectron)).toHaveLength(1);
+		expect(writes(agentMemory)).toHaveLength(1);
 	});
 
 	test("a slow conversation does not hold up an unrelated one", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		const streams = new Map<string, SDKMessage[]>([
 			["slow-session", turnFor("slow-session")],
 			["fast-session", turnFor("fast-session")],
 		]);
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			_queryFn: ({ prompt }) =>
 				scriptedQuery(streams.get(prompt as string) ?? ONE_TURN),
 		});
 
 		// One conversation leaves a slow write in flight...
-		spectron.delay("rememberMany", 300);
+		agentMemory.delay("rememberMany", 300);
 		const slow = drain(memory.query({ prompt: "slow-session" }));
 
 		// ...while a different conversation, whose write is fast, must not wait.
 		await Bun.sleep(10);
-		spectron.delay("rememberMany", 0);
+		agentMemory.delay("rememberMany", 0);
 
 		const started = Date.now();
 		await drain(memory.query({ prompt: "fast-session" }));
@@ -429,17 +429,17 @@ describe("resilience", () => {
 
 		// The instance-wide flush still covers everything.
 		await memory.flush();
-		expect(writes(spectron)).toHaveLength(2);
+		expect(writes(agentMemory)).toHaveLength(2);
 	});
 });
 
 describe("wiring", () => {
 	test("the wrapped query receives the merged options", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		let received: unknown;
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			_queryFn: (params) => {
 				received = params.options;
 				return scriptedQuery(ONE_TURN);
@@ -455,11 +455,11 @@ describe("wiring", () => {
 	});
 
 	test("a per-call k reaches the injecting hook", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		let captured: Record<string, unknown> | undefined;
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			k: 8,
 			_queryFn: (params) => {
 				captured = params.options as Record<string, unknown>;
@@ -485,15 +485,15 @@ describe("wiring", () => {
 			{ signal: new AbortController().signal } as never,
 		);
 
-		expect(spectron.callsFor("context")[0]?.args[1]).toMatchObject({ k: 2 });
+		expect(agentMemory.callsFor("context")[0]?.args[1]).toMatchObject({ k: 2 });
 	});
 
 	test("a per-call injectHistory:false removes the injecting hook", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		let captured: Record<string, unknown> | undefined;
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			_queryFn: (params) => {
 				captured = params.options as Record<string, unknown>;
 				return scriptedQuery(ONE_TURN);
@@ -508,11 +508,11 @@ describe("wiring", () => {
 	});
 
 	test("per-call overrides still apply when options are already wired", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		let captured: Record<string, unknown> | undefined;
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			_queryFn: (params) => {
 				captured = params.options as Record<string, unknown>;
 				return scriptedQuery(ONE_TURN);
@@ -534,8 +534,8 @@ describe("wiring", () => {
 	});
 
 	test("delegates prototype members to the real query", async () => {
-		const spectron = new MockSpectron();
-		const memory = createAgentMemory({ client: spectron.asClient() });
+		const agentMemory = new MockAgentMemory();
+		const memory = createAgentMemory({ client: agentMemory.asClient() });
 
 		// A real async generator, so its prototype chain differs from a plain
 		// object's — which is what makes the delegation observable.
@@ -545,8 +545,8 @@ describe("wiring", () => {
 		const inner = generate();
 
 		const wrapped = wrapQuery(inner as never, {
-			config: resolveConfig({ client: spectron.asClient() }),
-			binder: new SessionBinder(resolveConfig({ client: spectron.asClient() })),
+			config: resolveConfig({ client: agentMemory.asClient() }),
+			binder: new SessionBinder(resolveConfig({ client: agentMemory.asClient() })),
 			overrides: {},
 			track: () => {},
 			flush: async () => {},
@@ -559,11 +559,11 @@ describe("wiring", () => {
 	});
 
 	test("options passed through query() are not double-wired", async () => {
-		const spectron = new MockSpectron();
+		const agentMemory = new MockAgentMemory();
 		let received: { hooks?: Record<string, unknown[]> } | undefined;
 
 		const memory = createAgentMemory({
-			client: spectron.asClient(),
+			client: agentMemory.asClient(),
 			_queryFn: (params) => {
 				received = params.options as typeof received;
 				return scriptedQuery(ONE_TURN);

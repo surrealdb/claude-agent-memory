@@ -1,4 +1,4 @@
-import { CancelledError, RateLimitError } from "@surrealdb/spectron";
+import { CancelledError, RateLimitError } from "@surrealdb/memory";
 import type { ResolvedConfig } from "./config";
 import type { MemoryOp } from "./types";
 

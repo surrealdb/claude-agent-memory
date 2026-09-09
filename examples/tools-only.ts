@@ -23,7 +23,7 @@ console.log("tools offered to the model:", memory.toolNames());
 for await (const message of query({
 	prompt: "Look up what you know about my project, then summarise it.",
 	options: {
-		mcpServers: { spectron: memory.mcpServer() },
+		mcpServers: { agentMemory: memory.mcpServer() },
 		allowedTools: memory.toolNames(),
 		systemPrompt: memory.systemPromptAppend(),
 	},

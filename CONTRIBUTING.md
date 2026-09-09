@@ -25,7 +25,7 @@ The test suite needs no credentials and no running database. Most of it runs aga
 
 All four commands run in CI on every pull request, so run them locally before pushing.
 
-The examples in `examples/` do need a live Agent Memory instance. Set `SPECTRON_ENDPOINT`, `SPECTRON_API_KEY`, and `SPECTRON_CONTEXT`, then:
+The examples in `examples/` do need a live Agent Memory instance. Set `AGENT_MEMORY_ENDPOINT`, `AGENT_MEMORY_API_KEY`, and `AGENT_MEMORY_CONTEXT`, then:
 
 ```bash
 bun run examples/drop-in.ts "I moved to Lisbon"
@@ -91,7 +91,7 @@ When developing, make sure to follow the best industry standards and practices.
 
 Please avoid introducing new dependencies without consulting the team. New dependencies can be very helpful but also introduce new security and privacy issues, complexity, and impact total package size. Adding a new dependency should have vital value on the product with minimum possible risk.
 
-This package deliberately keeps a very small dependency surface: [`@surrealdb/spectron`](https://www.npmjs.com/package/@surrealdb/spectron) and `zod`, with the Claude Agent SDK as a peer dependency so consumers control its version.
+This package deliberately keeps a very small dependency surface: [`@surrealdb/memory`](https://www.npmjs.com/package/@surrealdb/memory) and `zod`, with the Claude Agent SDK as a peer dependency so consumers control its version.
 
 ## Other Ways to Help
 

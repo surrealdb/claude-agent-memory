@@ -5,7 +5,7 @@
     "": {
       "name": "@surrealdb/claude-agent-memory",
       "dependencies": {
-        "@surrealdb/spectron": "^1.0.0-alpha.7",
+        "@surrealdb/memory": "^1.0.0-alpha.9",
         "zod": "^3.25.0 || ^4.0.0",
       },
       "devDependencies": {
@@ -47,7 +47,7 @@
 
     "@stablelib/base64": ["@stablelib/base64@1.0.1", "", {}, "sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ=="],
 
-    "@surrealdb/spectron": ["@surrealdb/spectron@1.0.0-alpha.7", "", { "peerDependencies": { "typescript": "^5.0.0 || ^6.0.0" } }, "sha512-1653LXuRdDJW2pikBukVfUsV1JxWPClVClKY8QZKHG24GuvJSSjC69JhrxA26VZS5Rp19CQTxo6/gBYy7jpS2Q=="],
+    "@surrealdb/memory": ["@surrealdb/memory@1.0.0-alpha.9", "", { "peerDependencies": { "typescript": "^5.0.0 || ^6.0.0" } }, "sha512-tvFO3qJV1jwfUH8mZ7buLAWmOx0siko1uDVd/7pCRe5DqhTI0YMU27ecpRjjbXxvupWMhClIFrH2gfNoThWFVA=="],
 
     "@types/bun": ["@types/bun@1.4.0", "", { "dependencies": { "bun-types": "1.4.0" } }, "sha512-K+lZULY23vRgK/CfTjFIV+tyifaNdSMlPh9j+6mQ/cLfpOznLyAuzgV/JQysyECpkBQLVMSyvjlr2fBUSA9wFQ=="],
 

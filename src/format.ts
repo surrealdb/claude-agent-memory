@@ -1,7 +1,7 @@
 import type {
 	MemoryHitJson,
 	ProfileResponseJson,
-} from "@surrealdb/spectron";
+} from "@surrealdb/memory";
 
 /** Tag wrapping every injected memory block, referenced by the system prompt. */
 export const MEMORY_TAG = "surreal-memory";
