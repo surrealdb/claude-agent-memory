@@ -1,6 +1,6 @@
 {
 	"name": "@surrealdb/claude-agent-memory",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Persistent memory for Claude Agent SDK agents, backed by SurrealDB Agent Memory.",
 	"license": "Apache-2.0",
 	"type": "module",

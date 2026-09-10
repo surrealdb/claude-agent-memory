@@ -91,7 +91,7 @@ export function resolveConfig(config: AgentMemoryConfig = {}) {
 		maxInjectChars: config.maxInjectChars ?? 4000,
 		extract: config.extract,
 		tools: selectTools(config.tools),
-		serverName: config.serverName ?? "spectron",
+		serverName: config.serverName ?? "agent-memory",
 		systemPrompt: config.systemPrompt ?? true,
 		failOpen: config.failOpen ?? true,
 		injectTimeoutMs: config.injectTimeoutMs ?? 3000,

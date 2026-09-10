@@ -76,7 +76,7 @@ The user prefers Rust for systems work and has been migrating …
 </surreal-memory>
 ```
 
-Alongside that, these tools are exposed as `mcp__spectron__<name>`:
+Alongside that, these tools are exposed as `mcp__agent-memory__<name>`:
 
 | Tool | What it does | Default |
 |---|---|---|
@@ -124,7 +124,7 @@ const memory = createAgentMemory({
   extract,                 // "per_message" or "whole_conversation"
 
   // Surface
-  tools, serverName: "spectron", systemPrompt: true,
+  tools, serverName: "agent-memory", systemPrompt: true,
 
   // Resilience
   failOpen: true,          // an outage degrades the agent, never breaks it

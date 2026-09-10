@@ -12,9 +12,9 @@ describe("options()", () => {
 	test("registers the MCP server and allows its tools", () => {
 		const options = memory().options();
 
-		expect(options.mcpServers).toHaveProperty("spectron");
-		expect(options.allowedTools).toContain("mcp__spectron__recall");
-		expect(options.allowedTools).not.toContain("mcp__spectron__forget");
+		expect(options.mcpServers).toHaveProperty("agent-memory");
+		expect(options.allowedTools).toContain("mcp__agent-memory__recall");
+		expect(options.allowedTools).not.toContain("mcp__agent-memory__forget");
 	});
 
 	test("honours a custom server name in tool names", () => {
@@ -42,12 +42,12 @@ describe("options()", () => {
 		const result = memory().options(base);
 
 		expect(result.mcpServers).toHaveProperty("weather");
-		expect(result.mcpServers).toHaveProperty("spectron");
+		expect(result.mcpServers).toHaveProperty("agent-memory");
 	});
 
 	test("refuses to silently overwrite a name collision", () => {
 		const base = {
-			mcpServers: { spectron: { type: "http", url: "https://x" } },
+			mcpServers: { "agent-memory": { type: "http", url: "https://x" } },
 		} as unknown as Options;
 
 		expect(() => memory().options(base)).toThrow(/serverName/);
@@ -72,7 +72,7 @@ describe("options()", () => {
 		const once = instance.options({ model: "m" });
 		const twice = instance.options(once);
 
-		expect(Object.keys(twice.mcpServers ?? {})).toEqual(["spectron"]);
+		expect(Object.keys(twice.mcpServers ?? {})).toEqual(["agent-memory"]);
 		expect(twice.allowedTools).toEqual(once.allowedTools);
 		expect(twice.hooks?.UserPromptSubmit).toHaveLength(1);
 		expect(twice.systemPrompt).toBe(once.systemPrompt);
@@ -150,14 +150,14 @@ describe("system prompt", () => {
 	test("names the tools that are actually exposed", () => {
 		const prompt = memory({ tools: ["recall"] }).options().systemPrompt as string;
 
-		expect(prompt).toContain("mcp__spectron__recall");
-		expect(prompt).not.toContain("mcp__spectron__forget");
+		expect(prompt).toContain("mcp__agent-memory__recall");
+		expect(prompt).not.toContain("mcp__agent-memory__forget");
 	});
 
 	test("can be turned off without losing the rest of the wiring", () => {
 		const options = memory({ systemPrompt: false }).options();
 
 		expect(options.systemPrompt).toBeUndefined();
-		expect(options.mcpServers).toHaveProperty("spectron");
+		expect(options.mcpServers).toHaveProperty("agent-memory");
 	});
 });

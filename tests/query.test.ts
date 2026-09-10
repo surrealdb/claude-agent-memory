@@ -450,7 +450,7 @@ describe("wiring", () => {
 
 		expect(received).toMatchObject({ model: "m" });
 		expect((received as { mcpServers: object }).mcpServers).toHaveProperty(
-			"spectron",
+			"agent-memory",
 		);
 	});
 
