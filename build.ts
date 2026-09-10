@@ -8,7 +8,7 @@ const result = await Bun.build({
 	target: "node",
 	format: "esm",
 	sourcemap: "linked",
-	external: ["@anthropic-ai/claude-agent-sdk", "@surrealdb/spectron", "zod"],
+	external: ["@anthropic-ai/claude-agent-sdk", "@surrealdb/memory", "zod"],
 });
 
 // A `sideEffects: false` in package.json makes this bundle tree-shake itself

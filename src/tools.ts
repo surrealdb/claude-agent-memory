@@ -224,7 +224,7 @@ export function buildMcpServer(
 ): McpSdkServerConfigWithInstance {
 	return createSdkMcpServer({
 		name: config.serverName,
-		version: "0.1.0",
+		version: "0.2.0",
 		instructions:
 			"SurrealDB Agent Memory: persistent, cross-session memory of this " +
 			"user. Search it before assuming something is unknown.",

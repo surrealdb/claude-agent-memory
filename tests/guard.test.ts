@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { CancelledError, RateLimitError } from "@surrealdb/spectron";
+import { CancelledError, RateLimitError } from "@surrealdb/memory";
 import { MEMORY_UNAVAILABLE, guard, isAvailable } from "../src/guard";
 import type { MemoryOp } from "../src/types";
 

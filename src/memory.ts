@@ -23,8 +23,8 @@ import type {
 /**
  * Creates the memory integration for a Claude agent.
  *
- * Connection details fall back to `SPECTRON_ENDPOINT`, `SPECTRON_API_KEY`, and
- * `SPECTRON_CONTEXT`, so a call with no arguments is enough in a configured
+ * Connection details fall back to `AGENT_MEMORY_ENDPOINT`, `AGENT_MEMORY_API_KEY`, and
+ * `AGENT_MEMORY_CONTEXT`, so a call with no arguments is enough in a configured
  * environment.
  *
  * ```ts

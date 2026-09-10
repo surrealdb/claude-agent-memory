@@ -26,8 +26,8 @@ export {
 	RateLimitError,
 	ScopeError,
 	ServerError,
-	Spectron,
-	SpectronError,
+	AgentMemory as AgentMemoryClient,
+	AgentMemoryError,
 	ValidationError,
-} from "@surrealdb/spectron";
-export type { BatchMessage, Scope } from "@surrealdb/spectron";
+} from "@surrealdb/memory";
+export type { BatchMessage, Scope } from "@surrealdb/memory";

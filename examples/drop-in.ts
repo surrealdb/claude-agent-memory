@@ -7,7 +7,7 @@
  * Run it twice with those two prompts. The second run answers from what the
  * first one stored, in a different process, with nothing persisted locally.
  *
- * Needs SPECTRON_ENDPOINT, SPECTRON_API_KEY, and SPECTRON_CONTEXT.
+ * Needs AGENT_MEMORY_ENDPOINT, AGENT_MEMORY_API_KEY, and AGENT_MEMORY_CONTEXT.
  */
 import { createAgentMemory } from "../src/index";
 

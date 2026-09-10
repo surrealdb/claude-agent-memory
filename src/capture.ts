@@ -1,5 +1,5 @@
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import type { BatchMessage } from "@surrealdb/spectron";
+import type { BatchMessage } from "@surrealdb/memory";
 
 /** A turn ready to be written to memory. */
 export interface CapturedTurn {

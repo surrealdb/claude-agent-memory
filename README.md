@@ -27,9 +27,9 @@ The Agent SDK is a peer dependency, so you control its version.
 Configure the connection with the standard Agent Memory variables:
 
 ```bash
-SPECTRON_ENDPOINT=https://your-instance.surreal.cloud
-SPECTRON_API_KEY=…
-SPECTRON_CONTEXT=your-context
+AGENT_MEMORY_ENDPOINT=https://your-instance.surreal.cloud
+AGENT_MEMORY_API_KEY=…
+AGENT_MEMORY_CONTEXT=your-context
 ```
 
 Or pass them directly — `createAgentMemory({ endpoint, apiKey, context })`. Either way, a missing setting throws at startup rather than leaving you with an agent that silently has no memory.
@@ -100,9 +100,9 @@ You can also pass an exact list (`tools: ["recall", "remember"]`), an exclusion 
 
 ```ts
 const memory = createAgentMemory({
-  // Connection — each falls back to its SPECTRON_* variable.
+  // Connection — each falls back to its AGENT_MEMORY_* variable.
   endpoint, apiKey, context,
-  client,              // bring your own Spectron client instead
+  client,              // bring your own Agent Memory client instead
   timeout, maxRetries, fetchImpl,
 
   // Scoping
@@ -166,7 +166,7 @@ Writes never block the stream. They start when a turn closes and are awaited whe
 Build one memory per request, and let the service enforce the boundary:
 
 ```ts
-const base = new Spectron({ endpoint, apiKey, context });
+const base = new AgentMemory({ endpoint, apiKey, context });
 
 const memory = createAgentMemory({
   client: base.onBehalfOf(`principal:${userId}`),
@@ -189,7 +189,7 @@ const memory = createAgentMemory({
 - **`systemPromptAppend()`** — the system-prompt text.
 - **`memorySessionFor(claudeSessionId)`** — the bound memory session, if known.
 - **`flush()`** — await every in-flight write.
-- **`client`** — the underlying [`Spectron`](https://surrealdb.com/docs/agent-memory) client, for documents, entities, traces, and everything else the service offers.
+- **`client`** — the underlying [`AgentMemory`](https://surrealdb.com/docs/agent-memory) client, for documents, entities, traces, and everything else the service offers.
 
 ## Examples
 

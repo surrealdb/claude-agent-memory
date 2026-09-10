@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { ConnectionError } from "@surrealdb/spectron";
+import { ConnectionError } from "@surrealdb/memory";
 import { resolveConfig } from "../src/config";
 import { buildTools, toolNames } from "../src/tools";
 import type { AgentMemoryConfig, MemoryToolName } from "../src/types";
-import { MockSpectron } from "./mocks/spectron";
+import { MockAgentMemory } from "./mocks/agent-memory";
 
 /** The parts of an MCP tool result these tests read. */
 interface CallToolResult {
@@ -25,15 +25,15 @@ function tool(definitions: ToolDef[], name: MemoryToolName): ToolDef {
 
 /** The tool definitions a given config would register. */
 function definitionsFor(config: Partial<AgentMemoryConfig> = {}): {
-	spectron: MockSpectron;
+	agentMemory: MockAgentMemory;
 	tools: ToolDef[];
 } {
-	const spectron = new MockSpectron();
+	const agentMemory = new MockAgentMemory();
 	const tools = buildTools(
-		resolveConfig({ client: spectron.asClient(), ...config }),
+		resolveConfig({ client: agentMemory.asClient(), ...config }),
 	) as unknown as ToolDef[];
 
-	return { spectron, tools };
+	return { agentMemory, tools };
 }
 
 const textOf = (result: CallToolResult) =>
@@ -64,7 +64,7 @@ describe("registration", () => {
 
 	test("qualifies tool names with the server name", () => {
 		const resolved = resolveConfig({
-			client: new MockSpectron().asClient(),
+			client: new MockAgentMemory().asClient(),
 			serverName: "brain",
 			tools: ["recall"],
 		});
@@ -82,7 +82,7 @@ describe("registration", () => {
 
 describe("handlers", () => {
 	test("recall renders hits and forwards k and the lens", async () => {
-		const { spectron, tools } = definitionsFor({ lens: "user/tobie" });
+		const { agentMemory, tools } = definitionsFor({ lens: "user/tobie" });
 
 		const result = await tool(tools, "recall").handler(
 			{ query: "where do I live", k: 2 },
@@ -90,23 +90,23 @@ describe("handlers", () => {
 		);
 
 		expect(textOf(result)).toContain("- Prefers dark mode");
-		expect(spectron.callsFor("recall")[0]?.args[1]).toMatchObject({
+		expect(agentMemory.callsFor("recall")[0]?.args[1]).toMatchObject({
 			k: 2,
 			lens: "user/tobie",
 		});
 	});
 
 	test("recall falls back to the configured k", async () => {
-		const { spectron, tools } = definitionsFor({ k: 5 });
+		const { agentMemory, tools } = definitionsFor({ k: 5 });
 
 		await tool(tools, "recall").handler({ query: "x" }, undefined);
 
-		expect(spectron.callsFor("recall")[0]?.args[1]).toMatchObject({ k: 5 });
+		expect(agentMemory.callsFor("recall")[0]?.args[1]).toMatchObject({ k: 5 });
 	});
 
 	test("recall says so plainly when nothing matches", async () => {
-		const { spectron, tools } = definitionsFor();
-		spectron.hits = [];
+		const { agentMemory, tools } = definitionsFor();
+		agentMemory.hits = [];
 
 		const result = await tool(tools, "recall").handler(
 			{ query: "unicorns" },
@@ -129,7 +129,7 @@ describe("handlers", () => {
 	});
 
 	test("remember writes with the configured scopes and labels", async () => {
-		const { spectron, tools } = definitionsFor({
+		const { agentMemory, tools } = definitionsFor({
 			scopes: "team/eng",
 			labels: ["app=demo"],
 		});
@@ -140,7 +140,7 @@ describe("handlers", () => {
 		);
 
 		expect(textOf(result)).toContain("Saved");
-		expect(spectron.callsFor("remember")[0]?.args).toEqual([
+		expect(agentMemory.callsFor("remember")[0]?.args).toEqual([
 			"Moved to Lisbon",
 			{ infer: "full", scopes: "team/eng", labels: ["app=demo"] },
 		]);
@@ -167,7 +167,7 @@ describe("handlers", () => {
 	});
 
 	test("forget reports how much it deleted", async () => {
-		const { spectron, tools } = definitionsFor({
+		const { agentMemory, tools } = definitionsFor({
 			tools: { include: ["forget"] },
 		});
 
@@ -177,12 +177,12 @@ describe("handlers", () => {
 		);
 
 		expect(textOf(result)).toContain("Deleted 3");
-		expect(spectron.callsFor("forget")[0]?.args[1]).toMatchObject({ purge: true });
+		expect(agentMemory.callsFor("forget")[0]?.args[1]).toMatchObject({ purge: true });
 	});
 
 	test("a failure becomes a tool error, never a thrown turn", async () => {
-		const { spectron, tools } = definitionsFor();
-		spectron.failWith("recall", new ConnectionError({ status: 0, title: "down" }));
+		const { agentMemory, tools } = definitionsFor();
+		agentMemory.failWith("recall", new ConnectionError({ status: 0, title: "down" }));
 
 		const result = await tool(tools, "recall").handler({ query: "x" }, undefined);
 
@@ -191,8 +191,8 @@ describe("handlers", () => {
 	});
 
 	test("a failed write says nothing was saved", async () => {
-		const { spectron, tools } = definitionsFor();
-		spectron.failWith("remember", new Error("down"));
+		const { agentMemory, tools } = definitionsFor();
+		agentMemory.failWith("remember", new Error("down"));
 
 		const result = await tool(tools, "remember").handler(
 			{ text: "x" },
@@ -204,8 +204,8 @@ describe("handlers", () => {
 	});
 
 	test("tools keep answering even when the caller chose to fail closed", async () => {
-		const { spectron, tools } = definitionsFor({ failOpen: false });
-		spectron.failWith("recall", new Error("down"));
+		const { agentMemory, tools } = definitionsFor({ failOpen: false });
+		agentMemory.failWith("recall", new Error("down"));
 
 		const result = await tool(tools, "recall").handler({ query: "x" }, undefined);
 

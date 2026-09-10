@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { ALL_TOOLS, DEFAULT_TOOLS, resolveConfig } from "../src/config";
-import { MockSpectron } from "./mocks/spectron";
+import { MockAgentMemory } from "./mocks/agent-memory";
 
 const ENV_KEYS = [
-	"SPECTRON_ENDPOINT",
-	"SPECTRON_API_KEY",
-	"SPECTRON_CONTEXT",
+	"AGENT_MEMORY_ENDPOINT",
+	"AGENT_MEMORY_API_KEY",
+	"AGENT_MEMORY_CONTEXT",
 ] as const;
 
 const saved = new Map<string, string | undefined>();
@@ -30,9 +30,9 @@ afterEach(() => {
 describe("connection", () => {
 	test("reads the environment when nothing is passed", () => {
 		setEnv({
-			SPECTRON_ENDPOINT: "https://memory.example",
-			SPECTRON_API_KEY: "key",
-			SPECTRON_CONTEXT: "acme",
+			AGENT_MEMORY_ENDPOINT: "https://memory.example",
+			AGENT_MEMORY_API_KEY: "key",
+			AGENT_MEMORY_CONTEXT: "acme",
 		});
 
 		expect(resolveConfig().client.contextId).toBe("acme");
@@ -40,9 +40,9 @@ describe("connection", () => {
 
 	test("explicit values win over the environment", () => {
 		setEnv({
-			SPECTRON_ENDPOINT: "https://memory.example",
-			SPECTRON_API_KEY: "key",
-			SPECTRON_CONTEXT: "from-env",
+			AGENT_MEMORY_ENDPOINT: "https://memory.example",
+			AGENT_MEMORY_API_KEY: "key",
+			AGENT_MEMORY_CONTEXT: "from-env",
 		});
 
 		expect(resolveConfig({ context: "explicit" }).client.contextId).toBe(
@@ -52,22 +52,22 @@ describe("connection", () => {
 
 	test("a supplied client wins over everything and needs no other config", () => {
 		setEnv({});
-		const client = new MockSpectron().asClient();
+		const client = new MockAgentMemory().asClient();
 
 		expect(resolveConfig({ client }).client).toBe(client);
 	});
 
 	test("names every missing field rather than failing vaguely", () => {
-		setEnv({ SPECTRON_ENDPOINT: "https://memory.example" });
+		setEnv({ AGENT_MEMORY_ENDPOINT: "https://memory.example" });
 
 		expect(() => resolveConfig()).toThrow(
-			/missing apiKey \(SPECTRON_API_KEY\), context \(SPECTRON_CONTEXT\)/,
+			/missing apiKey \(AGENT_MEMORY_API_KEY\), context \(AGENT_MEMORY_CONTEXT\)/,
 		);
 	});
 });
 
 describe("tool selection", () => {
-	const client = () => new MockSpectron().asClient();
+	const client = () => new MockAgentMemory().asClient();
 
 	test("excludes the destructive tool by default", () => {
 		expect(resolveConfig({ client: client() }).tools).toEqual([
@@ -105,7 +105,7 @@ describe("tool selection", () => {
 
 describe("defaults", () => {
 	test("match the documented behaviour", () => {
-		const config = resolveConfig({ client: new MockSpectron().asClient() });
+		const config = resolveConfig({ client: new MockAgentMemory().asClient() });
 
 		expect(config.injectHistory).toBe(true);
 		expect(config.injectProfile).toBe(true);
