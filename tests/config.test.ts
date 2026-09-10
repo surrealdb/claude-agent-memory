@@ -113,7 +113,7 @@ describe("defaults", () => {
 		expect(config.k).toBe(8);
 		expect(config.retrieval).toBe("context");
 		expect(config.maxInjectChars).toBe(4000);
-		expect(config.serverName).toBe("spectron");
+		expect(config.serverName).toBe("agent-memory");
 		expect(config.systemPrompt).toBe(true);
 		expect(config.failOpen).toBe(true);
 		expect(config.injectTimeoutMs).toBe(3000);
